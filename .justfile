@@ -15,12 +15,12 @@ fmt:
 commit MESSAGE:
     jj describe --message "{{MESSAGE}}"
     jj bookmark set main --revision=@
-    jj squash
+    # jj squash
     jj git push
 
 # Interactive describe
 commit-interactive:
     jj describe
     jj bookmark set main --revision=@
-    jj squash
+    # jj squash
     jj git push
