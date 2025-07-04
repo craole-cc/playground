@@ -1,0 +1,10 @@
+{
+  "fileinator.ignoredFolders": [
+    ".git",
+    ".jj",
+    ".vscode",
+    "archive",
+    "rust/dioxus/todo/target",
+    "rust/.vscode"
+  ]
+}
