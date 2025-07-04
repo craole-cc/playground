@@ -2,7 +2,7 @@ set windows-shell := ["C:\\Program Files\\Git\\bin\\sh.exe", "-c"]
 set unstable := true
 set fallback := true
 
-# Format all justfiles with just and other files with treefmt
+# { Format all justfiles with just and other files with treefmt }
 fmt:
     find . -name "justfile" -o -name "*.justfile" -o -name ".justfile" | \
     while read -r file; do echo "Formatting $file"; \
@@ -11,16 +11,17 @@ fmt:
     done
     treefmt --clear-cache --fail-on-change
 
-# Quick commit with message
+# { Quick commit with message }
 commit MESSAGE:
-    jj describe --message "{{MESSAGE}}"
+    jj describe --message "{{ MESSAGE }}"
     jj bookmark set main --revision=@
-    # jj squash
     jj git push
 
-# Interactive describe
+# { Interactive describe commit }
 commit-interactive:
     jj describe
     jj bookmark set main --revision=@
-    # jj squash
     jj git push
+
+dioxus_todo:
+    cd rust/dioxus/todo && just
