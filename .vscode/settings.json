@@ -4,7 +4,7 @@
     ".jj",
     ".vscode",
     "archive",
+    "rust/.vscode",
     "rust/dioxus/todo/target",
-    "rust/.vscode"
   ]
 }
