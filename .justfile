@@ -25,3 +25,6 @@ commit-interactive:
 
 dioxus_todo:
     cd rust/dioxus/todo && just
+
+dioxus_dog:
+    cd rust/dioxus/hot_dog && just

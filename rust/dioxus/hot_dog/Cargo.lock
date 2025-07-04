@@ -2248,6 +2248,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "hot_dog"
+version = "0.1.0"
+dependencies = [
+ "dioxus",
+ "reqwest",
+ "rusqlite",
+ "serde",
+ "tracing",
+]
+
+[[package]]
 name = "html5ever"
 version = "0.26.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4739,16 +4750,6 @@ checksum = "5d4f6d1145dcb577acf783d4e601bc1d76a13337bb54e6233add580b07344c8b"
 dependencies = [
  "displaydoc",
  "zerovec",
-]
-
-[[package]]
-name = "todo"
-version = "0.1.0"
-dependencies = [
- "dioxus",
- "reqwest",
- "rusqlite",
- "tracing",
 ]
 
 [[package]]

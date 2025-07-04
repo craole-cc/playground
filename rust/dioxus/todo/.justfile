@@ -6,7 +6,9 @@ set fallback := true
 
 packages := "desktop mobile web"
 
-serve: desktop
+# serve: desktop
+serve:
+  dx serve
 
 # { Run dx command for all packages }
 _dx_all command:
