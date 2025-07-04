@@ -1,0 +1,15 @@
+{
+  "recommendations": [
+    "allemandinstable.colorful-comments-refreshed",
+    "almog-vagman-ciprut.listo",
+    "denoland.vscode-deno",
+    "fill-labs.dependi",
+    "formulahendry.code-runner",
+    "gruntfuggly.todo-tree",
+    "rust-lang.rust-analyzer",
+    "shinazbinshajahan.fileinator",
+    "tamasfe.even-better-toml",
+    "usernamehw.errorlens",
+    "vadimcn.vscode-lldb"
+  ]
+}

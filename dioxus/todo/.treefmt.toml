@@ -1,0 +1,23 @@
+[formatter.deno]
+command = "deno"
+includes = ["*.md", "README"]
+options = ["fmt"]
+priority = 1
+
+[formatter.toml]
+command = "taplo"
+includes = ["*.toml"]
+options = ["fmt"]
+priority = 1
+
+[formatter.rust]
+command = "rustfmt"
+includes = ["*.rs"]
+priority = 1
+
+#TODO: This is not working, so formatting in justfile instead
+# [formatter.just]
+# command = "just"
+# includes = ["*.justfile", ".justfile"]
+# options = ["--unstable", "--fmt"]
+# priority = 1
