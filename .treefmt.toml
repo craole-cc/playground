@@ -1,23 +1,49 @@
+excludes = [
+  "**/.jj",
+  "**/.jj/**",
+  "**/target",
+  "**/target/**",
+  "**/.git",
+  "**/.git/**",
+]
+
 [formatter.deno]
 command = "deno"
 includes = ["*.md", "README"]
+excludes = [
+  "**/.jj",
+  "**/.jj/**",
+  "**/target",
+  "**/target/**",
+  "**/.git",
+  "**/.git/**",
+]
 options = ["fmt"]
-priority = 1
+priority = 2
 
 [formatter.toml]
 command = "taplo"
 includes = ["*.toml"]
+excludes = [
+  "**/.jj",
+  "**/.jj/**",
+  "**/target",
+  "**/target/**",
+  "**/.git",
+  "**/.git/**",
+]
 options = ["fmt"]
 priority = 1
 
 [formatter.rust]
 command = "rustfmt"
 includes = ["*.rs"]
+excludes = [
+  "**/.jj",
+  "**/.jj/**",
+  "**/target",
+  "**/target/**",
+  "**/.git",
+  "**/.git/**",
+]
 priority = 1
-
-#TODO: This is not working, so formatting in justfile instead
-# [formatter.just]
-# command = "just"
-# includes = ["*.justfile", ".justfile"]
-# options = ["--unstable", "--fmt"]
-# priority = 1

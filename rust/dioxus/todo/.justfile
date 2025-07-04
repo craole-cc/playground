@@ -1,8 +1,18 @@
 set windows-shell := ["C:\\Program Files\\Git\\bin\\sh.exe", "-c"]
 set unstable := true
+set fallback := true
 
-serve:
-    just desktop
+serve: desktop
+
+build:
+    dx build --package desktop
+    dx build --package mobile
+    dx build --package web
+
+clean:
+    dx clean --package desktop
+    dx clean --package mobile
+    dx clean --package web
 
 desktop:
     dx serve --package desktop
@@ -12,7 +22,3 @@ mobile:
 
 web:
     dx serve --package web
-
-fmt:
-    just --unstable --fmt
-    treefmt --clear-cache --fail-on-change
