@@ -18,6 +18,7 @@ pub fn DogView() -> Element {
   //{ Define the first dog }
   let mut dog = use_resource(|| async move { get_from_dog_ceo().await });
 
+  #[derive(Clone)]
   enum DogViewState {
     Loading,
     Error(String),
@@ -64,7 +65,21 @@ pub fn DogView() -> Element {
       }
       div { id: "buttons",
         button { onclick: move |_| dog.restart(), id: "skip", "skip" }
-            // button { onclick: save, id: "save", "save!" }
+        button {
+          id: "save",
+          onclick: move |_| {
+              let value = view_state.clone();
+              async move {
+                  if let DogViewState::Loaded { image_url, .. } = value {
+                      let current = image_url.clone();
+                      _ = save_dog(current).await;
+                      dog.restart();
+                  }
+              }
+          },
+
+          "save!"
+        }
       }
     }
   }
@@ -109,4 +124,23 @@ pub fn extract_breed_from_url(dog_ceo_url: &str) -> String {
     .collect::<Vec<_>>()
     .join(" ");
   formatted
+}
+
+#[server]
+async fn save_dog(image: String) -> Result<(), ServerFnError> {
+  use std::io::Write;
+
+  // Open the `dogs.txt` file in append-only mode, creating it if it doesn't
+  // exist;
+  let mut file = std::fs::OpenOptions::new()
+    .write(true)
+    .append(true)
+    .create(true)
+    .open(DOG_TXT)
+    .unwrap();
+
+  // And then write a newline to it with the image url
+  file.write_fmt(format_args!("{image}\n"));
+
+  Ok(())
 }

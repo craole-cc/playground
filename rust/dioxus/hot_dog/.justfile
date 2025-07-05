@@ -4,3 +4,6 @@ set fallback := true
 
 serve:
   dx serve
+
+web:
+  dx serve --platform web

@@ -11,5 +11,6 @@ pub const LOGO: Asset = asset!(
     })
     .with_format(ImageFormat::Avif)
 );
+pub const DOG_TXT: &str = "assets/data/dog.txt";
 pub const DOG_CEO_RANDO: &str = "https://dog.ceo/api/breeds/image/random";
 pub static TITLE: GlobalSignal<&'static str> = Signal::global(|| "HotDogs");
