@@ -1,0 +1,54 @@
+#dogview {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.5rem;
+  background-color: #f9f9f9;
+  border: 1px solid #ddd;
+  border-radius: 12px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  max-width: 500px;
+  margin: 2rem auto;
+  font-family: sans-serif;
+}
+
+.dog-image-container {
+  width: 100%;
+  height: 400px; /* Fixed height for the container */
+  border-radius: 8px;
+  overflow: hidden; /* This is key to confining the image */
+  background-color: #eee;
+  background-size: contain;
+  background-position: top center;
+  background-repeat: no-repeat;
+}
+
+.dog-info {
+  text-align: center;
+  width: 100%;
+}
+
+.dog-info h2 {
+  margin-top: 0;
+  margin-bottom: 0.5rem;
+  font-size: 1.5rem;
+  color: #333;
+}
+
+.dog-info p {
+  margin: 0;
+  font-size: 0.8rem;
+  color: #777;
+  word-break: break-all; /* In case of very long URLs */
+}
+
+#buttons {
+  margin-top: 1rem;
+}
+
+.error {
+  color: red;
+  font-weight: bold;
+  text-align: center;
+}

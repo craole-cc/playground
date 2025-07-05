@@ -1,49 +1,40 @@
 /* App-wide styling */
 html, body {
-  background-color: #0e0e0e;
-  color: white;
+  background-color: #f9f9f9;
   font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-  height: 100%;
-  width: 100%;
-  overflow: hidden;
+  height: 100vh;
   margin: 0;
 }
 
-#main {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  justify-content: space-between;
+/* Use CSS Grid for a robust main app layout */
+#app-container {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  height: 100vh;
+  overflow-y: aut;
 }
 
-#dogview {
-  max-height: 80vh;
-  flex-grow: 1;
-  width: 100%;
+.content-area {
+  grid-row: 2;
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-}
-
-#dogview img {
-  display: block;
-  max-width: 50%;
-  max-height: 50%;
-  transform: scale(1.8);
-  border-radius: 5px;
-  border: 1px solid rgb(233, 233, 233);
-  box-shadow: 0px 0px 5px 1px rgb(216, 216, 216, 0.5);
+  padding: 1rem;
 }
 
 #title {
+  grid-row: 1;
   text-align: center;
-  padding-top: 10px;
-  border-bottom: 1px solid #a8a8a8;
+  padding: 0.75rem;
+  border-bottom: 1px solid #4a4a4a;
   display: flex;
   flex-direction: row;
   justify-content: center;
   align-items: center;
+  background-color: rgba(0, 0, 0, 0.2);
+  position: sticky;
+  top: 0;
+  z-index: 100;
 }
 
 #title a {
@@ -71,24 +62,38 @@ a#heart {
   display: flex;
   flex-direction: row;
   justify-content: center;
-  gap: 20px;
-  /* padding-top: 20px; */
-  padding-bottom: 20px;
+  gap: 1rem;
+  padding-top: 1rem;
 }
 
 #skip {
-  background-color: gray;
+  background-color: #5a6268;
+  border: 1px solid #4a4a4a;
 }
 #save {
-  background-color: green;
+  background-color: #007bff;
+  border: 1px solid #0069d9;
 }
 
 #skip, #save {
-  padding: 5px 30px 5px 30px;
-  border-radius: 3px;
-  font-size: 2rem;
+  padding: 0.5rem 1.5rem;
+  border-radius: 8px;
+  font-size: 1.5rem;
   font-weight: bold;
-  color: rgb(230, 230, 230);
+  color: #f0f0f0;
+  cursor: pointer;
+  transition: background-color 0.2s ease-in-out, transform 0.1s ease;
+}
+
+#skip:hover, #save:hover {
+  transform: translateY(-2px);
+}
+
+#skip:hover {
+  background-color: #6c757d;
+}
+#save:hover {
+  background-color: #0069d9;
 }
 
 #navbar {

@@ -2255,6 +2255,7 @@ dependencies = [
  "reqwest",
  "rusqlite",
  "serde",
+ "thiserror 2.0.12",
  "tracing",
 ]
 
