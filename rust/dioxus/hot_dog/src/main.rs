@@ -1,9 +1,13 @@
 //|-> Modules
-mod app;
 mod error;
 mod prelude;
-pub use prelude::*;
+mod provider;
+mod utils;
+mod views;
+
+use prelude::*;
 
 fn main() {
-  app::launch();
+  log::init("WARN");
+  // views::launch();
 }

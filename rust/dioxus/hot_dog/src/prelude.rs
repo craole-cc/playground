@@ -3,7 +3,10 @@ pub use dioxus::prelude::*;
 pub use tracing::{debug, error, info, trace, warn};
 
 //|-> Internal
-pub use crate::error::{Error, Result};
+pub use crate::{
+  error::{Error, Result},
+  utils::{format::capitalize_first_letter, *}
+};
 
 //|-> Constants
 pub static TITLE: GlobalSignal<&'static str> = Signal::global(|| "HotDogs");

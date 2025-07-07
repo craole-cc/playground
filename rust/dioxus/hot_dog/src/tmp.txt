@@ -1,0 +1,629 @@
+src/provider/custom.rs:
+
+contents:
+use super::prelude::*;
+use std::path::Path;
+
+pub struct Provider {
+  pub base_url: String
+}
+
+impl Provider {
+  /// Parses custom API format for breed information
+  pub fn parse_custom_format(&self, url: &str) -> Result<Breed> {
+    // Example custom format: "https://api.example.com/v3/dogs/afghan-hound.jpg"
+    let breed_str = url
+      .split('/')
+      .last()
+      .ok_or_else(|| Error::Url(format!("No breed in URL: {}", url)))?
+      .split('.')
+      .next()
+      .ok_or_else(|| Error::Url(format!("No breed identifier: {}", url)))?;
+    debug!("breed_str: {}", breed_str);
+
+    let mut parts = breed_str.splitn(2, '-');
+    match (parts.next(), parts.next()) {
+      (Some(a), Some(b)) => Ok(/* sub-breed case */),
+      (Some(a), None) => Ok(/* main breed case */),
+      _ => Err(Error::BreedFormat(format!("Invalid format: {}", breed_str)))
+    }
+  }
+}
+
+#[async_trait]
+impl Content for Provider {
+  async fn photo(&self, url: Option<&str>) -> Result<String> {
+    let url = url.unwrap_or(&self.base_url);
+    let response = reqwest::get(url).await?;
+
+    if let Ok(json) = response.json::<serde_json::Value>().await {
+      let photo_url = json
+        .get("url")
+        .or_else(|| json.get("message"))
+        .or_else(|| json.get("image"))
+        .or_else(|| json.get("photo"))
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string());
+
+      photo_url.ok_or(Error::EmptyResponse)
+    } else {
+      Err(Error::EmptyResponse)
+    }
+  }
+
+  async fn breed(
+    &self,
+    photo_url: Option<&str>,
+    _breeds_url: Option<&str>,
+    _breeds_path: Option<impl AsRef<Path> + Send + Sync>
+  ) -> Result<Breed> {
+    //{ Try to extract breed from URL if possible }
+    let image_url = self.photo(photo_url).await?;
+    let breed_data = self.parse_custom_format(&image_url)?;
+
+    //{ Return breed information }
+    Ok(breed_data)
+  }
+}
+
+============================
+
+src/provider/default.rs:
+
+contents:
+use super::{prelude::*, *};
+use std::{
+  collections::hash_map::DefaultHasher,
+  hash::{Hash, Hasher},
+  path::{Path, PathBuf},
+  time::{SystemTime, UNIX_EPOCH}
+};
+
+#[async_trait]
+pub trait Response: Sized {
+  type Output;
+
+  /// Primary parsing method
+  async fn parse(response: reqwest::Response) -> Result<Self::Output>;
+
+  /// Shorthand for fetching + parsing
+  async fn fetch(url: &str) -> Result<Self::Output> {
+    let response = reqwest::get(url).await?;
+    Self::parse(response).await
+  }
+
+  /// Optional validation hook
+  fn validate(&self) -> Result<()> {
+    Ok(())
+  }
+}
+
+// The trait that all API providers must implement
+#[async_trait]
+pub trait Content {
+  /// Returns the photo URL for a dog
+  async fn photo(&self, photo_url: Option<&str>) -> Result<String>;
+
+  /// Returns complete breed information
+  async fn breed(
+    &self,
+    photo_url: Option<&str>,
+    breeds_url: Option<&str>,
+    breeds_path: Option<impl AsRef<Path> + Send + Sync>
+  ) -> Result<Breed>;
+}
+
+#[derive(Debug)]
+pub struct Breed {
+  /// The primary breed name
+  pub main_breed: String,
+  /// The sub-breed, if applicable
+  pub sub_breed: Option<String>,
+  /// A reference URL for more information
+  pub reference_url: String,
+  /// The formatted name for display purposes
+  pub display_name: String
+}
+
+impl Breed {
+  pub fn new(
+    main_breed: impl Into<String>,
+    sub_breed: Option<impl Into<String>>,
+    reference_url: impl Into<String>,
+    display_name: impl Into<String>
+  ) -> Self {
+    Self {
+      main_breed: main_breed.into(),
+      sub_breed: sub_breed.map(Into::into),
+      reference_url: reference_url.into(),
+      display_name: display_name.into()
+    }
+  }
+
+  pub fn format_name(main: &str, sub: Option<&str>) -> String {
+    match sub {
+      Some(s) => format!(
+        "{} {}",
+        capitalize_first_letter(s),
+        capitalize_first_letter(main)
+      ),
+      None => capitalize_first_letter(main)
+    }
+  }
+}
+
+// Main Provider enum that uses the trait implementations
+#[derive(Debug, Default, Clone)]
+pub enum Provider {
+  #[default]
+  DogCeo,
+  Random,
+  Custom(String)
+}
+
+impl Provider {
+  // Get all known providers (excluding Custom and Random to avoid recursion)
+  fn known_providers() -> Vec<Provider> {
+    vec![
+      Provider::DogCeo,
+      // Add other known providers here as you implement them
+      // Do NOT include Provider::Random here to avoid recursion
+    ]
+  }
+
+  // Select a random provider from known providers
+  fn select_random() -> Provider {
+    let known = Self::known_providers();
+    if known.is_empty() {
+      return Provider::DogCeo; // fallback
+    }
+
+    // Simple pseudo-random selection using system time
+    let now = SystemTime::now()
+      .duration_since(UNIX_EPOCH)
+      .unwrap_or_default()
+      .as_nanos();
+
+    let mut hasher = DefaultHasher::new();
+    now.hash(&mut hasher);
+    let hash = hasher.finish();
+
+    let index = (hash as usize) % known.len();
+    known[index].clone()
+  }
+
+  pub async fn photo(&self, url: Option<&str>) -> Result<String> {
+    match self {
+      Provider::DogCeo => dog_ceo::Provider.photo(url).await,
+      Provider::Random => {
+        let random_provider = Self::select_random();
+        let default_provider = dog_ceo::Provider.photo(url).await;
+        match random_provider {
+          Provider::DogCeo => default_provider,
+          Provider::Custom(base_url) =>
+            custom::Provider::new(base_url).photo(url).await,
+          Provider::Random =>  default_provider //? As a failsafe fallback to DogCeo
+        }
+      }
+      Provider::Custom(base_url) =>
+        custom::Provider::new(base_url.clone()).photo(url).await,
+    }
+  }
+
+  pub async fn breed<P: AsRef<Path> + Send + Sync>(
+    &self,
+    photo_url: Option<&str>,
+    breeds_url: Option<&str>,
+    breeds_path: Option<P>
+  ) -> Result<String> {
+    match self {
+      Provider::DogCeo =>
+        dog_ceo::Provider
+          .breed(photo_url, breeds_url, breeds_path)
+          .await,
+      Provider::Random => {
+        //{ For breed extraction, determine the provider used }
+        if let Some(url) = photo_url {
+          if url.contains("dog.ceo") {
+            return dog_ceo::Provider
+              .breed(photo_url, breeds_url, breeds_path)
+              .await;
+          }
+        }
+        Ok("Unknown".to_string())
+      }
+      Provider::Custom(base_url) =>
+        custom::Provider::new(base_url.clone())
+          .breed(photo_url, breeds_url, breeds_path)
+          .await,
+    }
+  }
+
+  // Convenience constructors
+  pub fn dog_ceo() -> Self {
+    Provider::DogCeo
+  }
+
+  pub fn random() -> Self {
+    Provider::Random
+  }
+
+  pub fn custom<S: Into<String>>(base_url: S) -> Self {
+    Provider::Custom(base_url.into())
+  }
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+  use mockito::mock;
+  use tempfile::tempdir;
+
+  #[tokio::test]
+  async fn test_dog_ceo_photo() {
+    let _m = mock("GET", "/api/breeds/image/random")
+      .with_status(200)
+      .with_body(
+        r#"{"message":"https://dog.ceo/photo.jpg","status":"success"}"#
+      )
+      .create();
+
+    let provider = Provider::dog_ceo();
+    let result = provider.photo(Some(&mockito::server_url())).await;
+
+    assert!(result.is_ok());
+    assert_eq!(result.unwrap(), "https://dog.ceo/photo.jpg");
+  }
+
+  #[tokio::test]
+  async fn test_random_provider_photo() {
+    // This is tricky to test exactly since it's random
+    // We'll just verify it doesn't error
+    let provider = Provider::random();
+    let result = provider.photo(None).await;
+    assert!(result.is_ok());
+  }
+
+  #[tokio::test]
+  async fn test_custom_provider_photo() {
+    let _m = mock("GET", "/")
+      .with_status(200)
+      .with_body(r#"{"url":"https://custom.com/dog.jpg"}"#)
+      .create();
+
+    let provider = Provider::custom(mockito::server_url());
+    let result = provider.photo(None).await;
+
+    assert!(result.is_ok());
+    assert_eq!(result.unwrap(), "https://custom.com/dog.jpg");
+  }
+
+  #[tokio::test]
+  async fn test_dog_ceo_breed() {
+    let temp_dir = tempdir().unwrap();
+    let breeds_path = temp_dir.path().join("breeds.json");
+
+    let _m1 = mock("GET", "/api/breeds/image/random")
+            .with_status(200)
+            .with_body(r#"{"message":"https://dog.ceo/api/breeds/hound-afghan/123.jpg","status":"success"}"#)
+            .create();
+
+    let _m2 = mock("GET", "/api/breeds/list/all")
+      .with_status(200)
+      .with_body(r#"{"message":{"hound":["afghan"]},"status":"success"}"#)
+      .create();
+
+    let provider = Provider::dog_ceo();
+    let result = provider
+      .breed(
+        Some(&mockito::server_url()),
+        Some(&mockito::server_url()),
+        Some(breeds_path)
+      )
+      .await;
+
+    assert!(result.is_ok());
+    assert_eq!(result.unwrap(), "Afghan Hound");
+  }
+}
+
+============================
+
+src/provider/dog_ceo.rs:
+
+contents:
+use super::prelude::*;
+use reqwest::blocking;
+use serde_json::Value;
+use std::{
+  fs,
+  path::{Path, PathBuf}
+};
+
+const DOG_CEO_RANDOM_URL: &str = "https://dog.ceo/api/breeds/image/random";
+const DOG_CEO_BREEDS_URL: &str = "https://dog.ceo/api/breeds/list/all";
+const DOG_CEO_BREEDS_JSON: &str = "assets/data/dog_ceo_breeds.json";
+
+#[derive(serde::Deserialize, Debug)]
+pub struct Api {
+  pub message: String,
+  pub status: String
+}
+
+pub struct Provider;
+
+impl Provider {
+  /// Extracts breed information from Dog CEO image URLs
+  /// Example: "https://images.dog.ceo/breeds/hound-afghan/n02088094_1003.jpg"
+  pub fn extract_breed_from_url(url: &str) -> Result<(String, Option<String>)> {
+    let parts: Vec<&str> = url
+      .split("/breeds/")
+      .nth(1)
+      .ok_or_else(|| Error::Url(format!("URL missing breed segment: {}", url)))?
+      .split('/')
+      .next()
+      .ok_or_else(|| {
+        Error::Url(format!("URL missing breed identifier: {}", url))
+      })?
+      .split('-')
+      .collect();
+
+    match parts.as_slice() {
+      [main] => Ok((main.to_string(), None)),
+      [main, sub] => Ok((main.to_string(), Some(sub.to_string()))),
+      _ => Err(Error::BreedFormat(format!(
+        "Expected 'main' or 'main-sub' format, got: {}",
+        url
+      )))
+    }
+  }
+
+  /// Gets or downloads the breeds list
+  pub fn get_breeds<P: AsRef<Path>>(
+    breeds_path: Option<P>,
+    breeds_url: Option<&str>
+  ) -> Result<BreedsApiResponse> {
+    let path = breeds_path.map_or_else(
+      || PathBuf::from(DOG_CEO_BREEDS_JSON),
+      |p| p.as_ref().to_path_buf()
+    );
+
+    let url = breeds_url.unwrap_or(DOG_CEO_BREEDS_URL);
+
+    // Download or read cached breeds data
+    let content = if fs::metadata(&path).is_err() {
+      if let Some(parent) = path.parent() {
+        fs::create_dir_all(parent)?;
+      }
+      let response = reqwest::blocking::get(url)?;
+      let content = response.text()?;
+      fs::write(&path, &content)?;
+      content
+    } else {
+      fs::read_to_string(&path)?
+    };
+
+    serde_json::from_str(&content).map_err(Into::into)
+  }
+
+  /// Validates if a breed exists in the official list
+  pub fn verify_breed(
+    main: &str,
+    sub: &Option<String>,
+    breeds: &BreedsApiResponse
+  ) -> Result<()> {
+    let valid = match sub {
+      Some(s) => breeds
+        .message
+        .get(main)
+        .map(|subs| subs.contains(s))
+        .unwrap_or(false),
+      None => breeds.message.contains_key(main)
+    };
+
+    if !valid {
+      let breed_name = sub
+        .as_ref()
+        .map_or(main.to_string(), |s| format!("{} {}", s, main));
+      Err(Error::UnrecognizedBreed(breed_name))
+    } else {
+      Ok(())
+    }
+  }
+
+  /// Builds the reference URL for a breed
+  pub fn build_reference_url(
+    main_breed: &str,
+    sub_breed: &Option<String>
+  ) -> String {
+    match sub_breed {
+      Some(sub) => format!("https://dog.ceo/api/breed/{}/{}", main_breed, sub),
+      None => format!("https://dog.ceo/api/breed/{}", main_breed)
+    }
+  }
+}
+
+#[async_trait]
+impl Content for Provider {
+  async fn photo(&self, photo_url: Option<&str>) -> Result<String> {
+    let photo_url = photo_url.unwrap_or(DOG_CEO_RANDOM_URL);
+    let response = reqwest::get(photo_url).await?;
+    let api = response.json::<Api>().await?;
+
+    if api.message.is_empty() {
+      Err(Error::EmptyResponse)
+    } else {
+      Ok(api.message)
+    }
+  }
+
+  async fn breed(
+    &self,
+    photo_url: Option<&str>,
+    breeds_url: Option<&str>,
+    breeds_path: Option<impl AsRef<Path> + Send + Sync>
+  ) -> Result<Breed> {
+    let image_url = self.photo(photo_url).await?;
+    debug!("photo_url: {}", image_url);
+
+    //{ Extract breed from URL }
+    let (main, sub) = Self::extract_breed_from_url(&image_url)?;
+    let breeds_data = Self::get_breeds(breeds_path, breeds_url)?;
+    let verified = Self::verify_breed(&main, &sub, &breeds_data);
+    Breed::new(
+      main,
+      sub,
+      Self::build_reference_url(&main, &sub),
+      if verified {
+        Breed::format_name(&main, sub.as_deref())
+      } else {
+        format!("{} (unverified)", Breed::format_name(&main, sub.as_deref()))
+      }
+    )
+  }
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+  pub use mockito::{mock, server_url};
+  pub use tempfile::tempdir;
+
+  const TEST_RANDOM_IMAGE_ENDPOINT: &str = "/api/breeds/image/random";
+  const TEST_BREEDS_LIST_ENDPOINT: &str = "/api/breeds/list/all";
+  const TEST_IMAGE_URL: &str =
+    "https://images.dog.ceo/breeds/hound-afghan/n02088094_1003.jpg";
+  const TEST_BREEDS_DATA: &str =
+    r#"{"message":{"hound":["afghan"]},"status":"success"}"#;
+
+  #[tokio::test]
+  async fn test_photo_success() {
+    //{ Setup mock server }
+    let mock_response = mock("GET", TEST_RANDOM_IMAGE_ENDPOINT)
+      .with_status(200)
+      .with_header("content-type", "application/json")
+      .with_body(format!(
+        r#"{{"message":"{TEST_IMAGE_URL}","status":"success"}}"#
+      ))
+      .create();
+
+    //{ Create provider and test with mock server URL }
+    let provider = Provider;
+    let test_url = format!("{}{}", server_url(), TEST_RANDOM_IMAGE_ENDPOINT);
+    let result = provider.photo(Some(&test_url)).await;
+
+    //{ Verify results }
+    mock_response.assert();
+    assert!(result.is_ok());
+    assert_eq!(result.unwrap(), TEST_IMAGE_URL);
+  }
+
+  #[tokio::test]
+  async fn test_photo_empty_response() {
+    let mock_response = mock("GET", TEST_RANDOM_IMAGE_ENDPOINT)
+      .with_status(200)
+      .with_body(r#"{"message":"","status":"success"}"#)
+      .create();
+    let provider = Provider;
+    let result = provider.photo(Some(&server_url())).await;
+
+    mock_response.assert();
+    assert!(result.is_err());
+  }
+
+  #[tokio::test]
+  async fn test_breed_formatting() {
+    let breeds_data = serde_json::json!({
+        "message": {
+            "hound": ["afghan"],
+            "sheepdog": ["english"]
+        },
+        "status": "success"
+    });
+
+    // Test sub-breed formatting
+    assert_eq!(
+      Provider::format_breed("sheepdog-english", &breeds_data["message"]),
+      "English Sheepdog"
+    );
+
+    // Test main breed formatting
+    assert_eq!(
+      Provider::format_breed("hound", &breeds_data["message"]),
+      "Hound"
+    );
+  }
+
+  #[tokio::test]
+  async fn test_breed_with_download() {
+    let temp_dir = tempdir().unwrap();
+    let breeds_path = temp_dir.path().join("breeds.json");
+
+    // Using our constants
+    let photo_mock = mock("GET", TEST_RANDOM_IMAGE_ENDPOINT)
+      .with_body(format!(
+        r#"{{"message":"{TEST_IMAGE_URL}","status":"success"}}"#
+      ))
+      .create();
+
+    let breeds_mock = mock("GET", TEST_BREEDS_LIST_ENDPOINT)
+      .with_body(TEST_BREEDS_DATA)
+      .create();
+
+    let provider = Provider;
+
+    // We need to handle the blocking operation properly
+    let result = tokio::task::spawn_blocking(move || {
+      // Perform the blocking file operations inside spawn_blocking
+      let breeds_content = reqwest::blocking::get(format!(
+        "{}{}",
+        server_url(),
+        TEST_BREEDS_LIST_ENDPOINT
+      ))?
+      .text()?;
+      fs::write(&breeds_path, breeds_content)?;
+
+      // Now do the async part
+      tokio::runtime::Runtime::new()?.block_on(async {
+        provider
+          .breed(
+            Some(&format!("{}{}", server_url(), TEST_RANDOM_IMAGE_ENDPOINT)),
+            Some(&format!("{}{}", server_url(), TEST_BREEDS_LIST_ENDPOINT)),
+            Some(breeds_path)
+          )
+          .await
+      })
+    })
+    .await
+    .unwrap();
+
+    debug!("result: {:?}", &result);
+    photo_mock.assert();
+    breeds_mock.assert();
+
+    assert!(result.is_ok());
+    assert_eq!(result.unwrap(), "Afghan Hound");
+  }
+}
+
+============================
+
+src/provider/mod.rs:
+
+contents:
+//|-> Modules
+mod custom;
+mod default;
+mod dog_ceo;
+
+//|-> Internal Exports
+mod prelude {
+  pub use super::default::{ApiResponse, Breed, Content};
+  pub use crate::prelude::*;
+  pub use async_trait::async_trait;
+}
+
+//|-> External Exports
+// pub use default::Provider;
+// pub use default::Config;
+// pub use provider::Provider;

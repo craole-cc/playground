@@ -8,15 +8,6 @@ edition = "2021"
 unsafe_code = { level = "deny", priority = -1 }
 unused = { level = "allow", priority = -2 }
 
-[dependencies]
-dioxus = { version = "0.6.0", features = ["fullstack"] }
-reqwest = { version = "0.12.22", features = ["json", "blocking"] }
-rusqlite = { version = "0.36.0", features = ["bundled"], optional = true }
-serde = { version = "1.0.219", features = ["derive"] }
-serde_json = "1.0.140"
-thiserror = "2.0.12"
-tracing = "0.1.41"
-
 [features]
 default = ["web"]
 web = ["dioxus/web"]
@@ -35,3 +26,21 @@ inherits = "dev"
 
 [profile.android-dev]
 inherits = "dev"
+
+[dependencies]
+async-trait = "0.1.88"
+dioxus = { version = "0.6.0", features = ["fullstack"] }
+reqwest = { version = "0.12.22", features = ["json", "blocking"] }
+rusqlite = { version = "0.36.0", features = ["bundled"], optional = true }
+serde = { version = "1.0.219", features = ["derive"] }
+serde_json = "1.0.140"
+thiserror = "2.0.12"
+tokio = { version = "1.46.1", features = ["full", "rt-multi-thread"] }
+tracing = "0.1.41"
+tracing-subscriber = { version = "0.3.19", features = ["env-filter"] }
+
+
+[dev-dependencies]
+mockito = { version = "0.31", features = [] }
+tempfile = "3.3"
+tokio = { version = "1.46.1", features = ["full", "rt-multi-thread"] }

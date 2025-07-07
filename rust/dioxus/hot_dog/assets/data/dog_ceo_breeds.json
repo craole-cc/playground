@@ -1,0 +1,245 @@
+{
+  "message": {
+    "chippiparai": [
+      "indian"
+    ],
+    "pinscher": [
+      "miniature"
+    ],
+    "stbernard": [],
+    "bakharwal": [
+      "indian"
+    ],
+    "basenji": [],
+    "coonhound": [],
+    "australian": [
+      "kelpie",
+      "shepherd"
+    ],
+    "doberman": [],
+    "frise": [
+      "bichon"
+    ],
+    "tervuren": [],
+    "vizsla": [],
+    "kuvasz": [],
+    "finnish": [
+      "lapphund"
+    ],
+    "greyhound": [
+      "indian",
+      "italian"
+    ],
+    "leonberg": [],
+    "papillon": [],
+    "weimaraner": [],
+    "wolfhound": [
+      "irish"
+    ],
+    "entlebucher": [],
+    "kelpie": [],
+    "pekinese": [],
+    "corgi": [
+      "cardigan"
+    ],
+    "keeshond": [],
+    "cotondetulear": [],
+    "hound": [
+      "afghan",
+      "basset",
+      "blood",
+      "english",
+      "ibizan",
+      "plott",
+      "walker"
+    ],
+    "kombai": [],
+    "labradoodle": [],
+    "pitbull": [],
+    "buhund": [
+      "norwegian"
+    ],
+    "dachshund": [],
+    "brabancon": [],
+    "samoyed": [],
+    "mix": [],
+    "bouvier": [],
+    "dalmatian": [],
+    "mastiff": [
+      "bull",
+      "english",
+      "indian",
+      "tibetan"
+    ],
+    "dhole": [],
+    "maltese": [],
+    "pomeranian": [],
+    "briard": [],
+    "elkhound": [
+      "norwegian"
+    ],
+    "lhasa": [],
+    "chihuahua": [],
+    "cockapoo": [],
+    "komondor": [],
+    "pembroke": [],
+    "poodle": [
+      "medium",
+      "miniature",
+      "standard",
+      "toy"
+    ],
+    "shihtzu": [],
+    "spaniel": [
+      "blenheim",
+      "brittany",
+      "cocker",
+      "irish",
+      "japanese",
+      "sussex",
+      "welsh"
+    ],
+    "mexicanhairless": [],
+    "african": [],
+    "springer": [
+      "english"
+    ],
+    "ovcharka": [
+      "caucasian"
+    ],
+    "otterhound": [],
+    "affenpinscher": [],
+    "pariah": [
+      "indian"
+    ],
+    "schipperke": [],
+    "labrador": [],
+    "waterdog": [
+      "spanish"
+    ],
+    "retriever": [
+      "chesapeake",
+      "curly",
+      "flatcoated",
+      "golden"
+    ],
+    "sharpei": [],
+    "cavapoo": [],
+    "cattledog": [
+      "australian"
+    ],
+    "borzoi": [],
+    "malamute": [],
+    "airedale": [],
+    "ridgeback": [
+      "rhodesian"
+    ],
+    "chow": [],
+    "deerhound": [
+      "scottish"
+    ],
+    "appenzeller": [],
+    "pointer": [
+      "german",
+      "germanlonghair"
+    ],
+    "havanese": [],
+    "newfoundland": [],
+    "rottweiler": [],
+    "clumber": [],
+    "beagle": [],
+    "bullterrier": [
+      "staffordshire"
+    ],
+    "mudhol": [
+      "indian"
+    ],
+    "saluki": [],
+    "schnauzer": [
+      "giant",
+      "miniature"
+    ],
+    "spitz": [
+      "indian",
+      "japanese"
+    ],
+    "bulldog": [
+      "boston",
+      "english",
+      "french"
+    ],
+    "collie": [
+      "border"
+    ],
+    "dingo": [],
+    "mountain": [
+      "bernese",
+      "swiss"
+    ],
+    "terrier": [
+      "american",
+      "australian",
+      "bedlington",
+      "border",
+      "cairn",
+      "dandie",
+      "fox",
+      "irish",
+      "kerryblue",
+      "lakeland",
+      "norfolk",
+      "norwich",
+      "patterdale",
+      "russell",
+      "scottish",
+      "sealyham",
+      "silky",
+      "tibetan",
+      "toy",
+      "welsh",
+      "westhighland",
+      "wheaten",
+      "yorkshire"
+    ],
+    "sheepdog": [
+      "english",
+      "indian",
+      "shetland"
+    ],
+    "whippet": [],
+    "pug": [],
+    "danish": [
+      "swedish"
+    ],
+    "puggle": [],
+    "rajapalayam": [
+      "indian"
+    ],
+    "bluetick": [],
+    "eskimo": [],
+    "redbone": [],
+    "dane": [
+      "great"
+    ],
+    "groenendael": [],
+    "akita": [],
+    "husky": [],
+    "gaddi": [
+      "indian"
+    ],
+    "malinois": [],
+    "setter": [
+      "english",
+      "gordon",
+      "irish"
+    ],
+    "pyrenees": [],
+    "segugio": [
+      "italian"
+    ],
+    "shiba": [],
+    "germanshepherd": [],
+    "boxer": []
+  },
+  "status": "success"
+}

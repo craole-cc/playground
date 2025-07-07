@@ -2,14 +2,12 @@
 mod custom;
 mod default;
 mod dog_ceo;
+mod prelude;
 
 //|-> Internal Exports
-mod prelude {
-  pub use super::default::Content;
-  pub use crate::components::dog::config::prelude::*;
-}
+pub use prelude::*;
 
 //|-> External Exports
-pub use default::Provider;
+// pub use default::Provider;
 // pub use default::Config;
 // pub use provider::Provider;
