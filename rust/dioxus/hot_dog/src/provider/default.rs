@@ -137,13 +137,15 @@ impl Provider {
 
 #[cfg(test)]
 mod tests {
-  use super::*;
+  use super::{prelude::*, *};
   use mockito::mock;
   use std::fs;
   use tempfile::tempdir;
 
   #[tokio::test]
   async fn test_dog_ceo_photo() {
+    log::testing::init();
+
     // Mock the API endpoint that dog_ceo::Provider will call
     let _m = mock("GET", "/api/breeds/image/random")
       .with_status(200)
@@ -154,6 +156,8 @@ mod tests {
       .create();
 
     let provider = Provider::dog_ceo();
+    // eprintln!("Provider: {:?}", &provider);
+    info!("Provider: {:?}", &provider);
     // Pass the mock server URL to the provider
     let test_url = format!("{}/api/breeds/image/random", mockito::server_url());
     let result = provider.photo(Some(&test_url)).await;

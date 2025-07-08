@@ -8,6 +8,6 @@ mod views;
 use prelude::*;
 
 fn main() {
-  log::init("WARN");
+  log::init();
   // views::launch();
 }

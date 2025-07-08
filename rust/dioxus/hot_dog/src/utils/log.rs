@@ -1,64 +1,99 @@
-pub enum LogLevel {
+//TODO: Replace with logline
+use std::str::FromStr;
+use tracing::debug;
+use tracing_subscriber::{fmt, EnvFilter};
+
+/// Represents a logging level.
+#[derive(Debug, Clone)]
+pub enum Level {
   Level(tracing::Level),
   String(String)
 }
 
-impl From<tracing::Level> for LogLevel {
+// -- Trait Implementations --
+impl From<tracing::Level> for Level {
   fn from(level: tracing::Level) -> Self {
-    LogLevel::Level(level)
+    Self::Level(level)
   }
 }
-
-impl From<&str> for LogLevel {
+impl From<&str> for Level {
   fn from(s: &str) -> Self {
-    LogLevel::String(s.to_string())
+    Self::String(s.to_owned())
   }
 }
-
-impl From<String> for LogLevel {
+impl From<String> for Level {
   fn from(s: String) -> Self {
-    LogLevel::String(s)
+    Self::String(s)
+  }
+}
+impl Default for Level {
+  fn default() -> Self {
+    Self::Level(tracing::Level::INFO)
   }
 }
 
-pub fn init<T: Into<LogLevel>>(lvl: T) {
-  let mut subscriber = tracing_subscriber::fmt();
-
-  match std::env::var("RUST_LOG") {
-    Ok(env_filter) => {
-      subscriber
-        .with_env_filter(tracing_subscriber::EnvFilter::new(env_filter))
-        .init();
+impl Level {
+  fn to_tracing_level(&self) -> tracing::Level {
+    match self {
+      Level::Level(level) => *level,
+      Level::String(s) => tracing::Level::from_str(s.to_lowercase().as_str())
+        .unwrap_or(tracing::Level::INFO)
     }
-    Err(_) => {
-      let level = match lvl.into() {
-        LogLevel::Level(level) => level,
-        LogLevel::String(level_str) => {
-          // Try to parse as a full level name first
-          match level_str.to_lowercase().as_str() {
-            "error" => tracing::Level::ERROR,
-            "warn" => tracing::Level::WARN,
-            "info" => tracing::Level::INFO,
-            "debug" => tracing::Level::DEBUG,
-            "trace" => tracing::Level::TRACE,
-            _ => {
-              // Fall back to first character parsing
-              let level_char =
-                level_str.chars().next().unwrap_or('i').to_ascii_lowercase();
+  }
+}
 
-              match level_char {
-                'e' => tracing::Level::ERROR,
-                'd' => tracing::Level::DEBUG,
-                't' => tracing::Level::TRACE,
-                'w' => tracing::Level::WARN,
-                _ => tracing::Level::INFO
-              }
-            }
-          }
-        }
-      };
+// -- Private Helper --
 
-      subscriber.with_max_level(level).init();
-    }
+/// Builds and initializes the subscriber with a given filter.
+fn setup_subscriber(filter: EnvFilter) {
+  fmt().without_time().with_env_filter(filter).init();
+}
+
+// -- Public API --
+
+/// Initializes the logger, prioritizing the `RUST_LOG` environment variable.
+///
+/// If `RUST_LOG` is not set, it falls back to the `INFO` level.
+pub fn init() {
+  let filter = match std::env::var("RUST_LOG") {
+    Ok(env_var) if !env_var.is_empty() => EnvFilter::new(env_var),
+    _ =>
+      EnvFilter::from_default_env().add_directive(tracing::Level::INFO.into()),
+  };
+  setup_subscriber(filter);
+  debug!("Logging initialized, respecting RUST_LOG.");
+}
+
+/// Initializes the logger with a specific level, **ignoring `RUST_LOG`**.
+///
+/// This provides a hard override, which is useful for forcing a specific log
+/// level in tests or applications regardless of the environment.
+pub fn init_with_level<L>(level: L)
+where
+  L: Into<Level>
+{
+  let tracing_level = level.into().to_tracing_level();
+  let filter =
+    EnvFilter::from_default_env().add_directive(tracing_level.into());
+  setup_subscriber(filter);
+  debug!("Logging initialized with forced level: {:?}", tracing_level);
+}
+
+// -- Test Utilities --
+
+#[cfg(test)]
+pub mod testing {
+  use std::sync::Once;
+  static INIT: Once = Once::new();
+
+  /// Initializes logging for tests.
+  ///
+  /// This will default to the level set in `super::init()` (typically INFO)
+  /// but can be overridden by the `RUST_LOG` environment variable.
+  /// Call this function at the beginning of every test.
+  pub fn init() {
+    INIT.call_once(|| {
+      super::init();
+    });
   }
 }
