@@ -62,9 +62,10 @@ impl Provider {
               Some(url_str) => DataSource::Url(url_str),
               None => DataSource::Url(&base_url)
             };
-            custom::Provider::new(base_url.clone()).photo(source).await //TODO Is this expensive?
+            custom::Provider::new(base_url.clone()).photo(source).await
           }
           Provider::Random => {
+            // Prevent infinite recursion - fallback to DogCeo
             let source = match url {
               Some(url_str) => DataSource::Url(url_str),
               None => DataSource::Url("https://dog.ceo/api/breeds/image/random")
@@ -138,22 +139,30 @@ impl Provider {
 mod tests {
   use super::*;
   use mockito::mock;
+  use std::fs;
   use tempfile::tempdir;
 
   #[tokio::test]
   async fn test_dog_ceo_photo() {
+    // Mock the API endpoint that dog_ceo::Provider will call
     let _m = mock("GET", "/api/breeds/image/random")
       .with_status(200)
+      .with_header("content-type", "application/json")
       .with_body(
-        r#"{"message":"https://dog.ceo/photo.jpg","status":"success"}"#
+        r#"{"message":"https://images.dog.ceo/breeds/hound-afghan/n02088094_1003.jpg","status":"success"}"#
       )
       .create();
 
     let provider = Provider::dog_ceo();
-    let result = provider.photo(Some(&mockito::server_url())).await;
+    // Pass the mock server URL to the provider
+    let test_url = format!("{}/api/breeds/image/random", mockito::server_url());
+    let result = provider.photo(Some(&test_url)).await;
 
     assert!(result.is_ok());
-    assert_eq!(result.unwrap(), "https://dog.ceo/photo.jpg");
+    assert_eq!(
+      result.unwrap(),
+      "https://images.dog.ceo/breeds/hound-afghan/n02088094_1003.jpg"
+    );
   }
 
   #[tokio::test]
@@ -167,6 +176,7 @@ mod tests {
   async fn test_custom_provider_photo() {
     let _m = mock("GET", "/")
       .with_status(200)
+      .with_header("content-type", "application/json")
       .with_body(r#"{"url":"https://custom.com/dog.jpg"}"#)
       .create();
 
@@ -182,25 +192,31 @@ mod tests {
     let temp_dir = tempdir().unwrap();
     let breeds_path = temp_dir.path().join("breeds.json");
 
-    let _m1 = mock("GET", "/api/breeds/image/random")
-            .with_body(r#"{"message":"https://images.dog.ceo/breeds/hound-afghan/123.jpg","status":"success"}"#)
-            .create();
+    // Create the breeds file with test data BEFORE running the test
+    let breeds_data = r#"{"message":{"hound":["afghan"]},"status":"success"}"#;
+    fs::write(&breeds_path, breeds_data).unwrap();
 
-    let _m2 = mock("GET", "/api/breeds/list/all")
-      .with_body(r#"{"message":{"hound":["afghan"]},"status":"success"}"#)
+    // Mock the photo API endpoint
+    let _m = mock("GET", "/api/breeds/image/random")
+      .with_status(200)
+      .with_header("content-type", "application/json")
+      .with_body(r#"{"message":"https://images.dog.ceo/breeds/hound-afghan/n02088094_1003.jpg","status":"success"}"#)
       .create();
 
     let provider = Provider::dog_ceo();
+    let test_url = format!("{}/api/breeds/image/random", mockito::server_url());
     let result = provider
       .breed(
-        Some(&mockito::server_url()),
-        Some(&mockito::server_url()),
-        Some(breeds_path)
+        Some(&test_url),
+        None, // breeds_url - not used in this test
+        Some(&breeds_path)
       )
       .await;
 
     assert!(result.is_ok());
     let breed = result.unwrap();
     assert_eq!(breed.display_name, "Afghan Hound");
+    assert_eq!(breed.main_breed, "hound");
+    assert_eq!(breed.sub_breed, Some("afghan".to_string()));
   }
 }

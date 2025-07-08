@@ -2,7 +2,8 @@ use crate::provider::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::{
   fs,
-  path::{Path, PathBuf}
+  path::{Path, PathBuf},
+  sync::OnceLock
 };
 
 const DOG_CEO_RANDOM_URL: &str = "https://dog.ceo/api/breeds/image/random";
@@ -15,13 +16,16 @@ pub struct PhotoApiResponse {
   pub status: String
 }
 
-#[derive(Deserialize, Serialize, Debug)]
+#[derive(Deserialize, Serialize, Debug, Clone)]
 pub struct BreedsApiResponse {
   pub message: std::collections::HashMap<String, Vec<String>>,
   pub status: String
 }
 
 pub struct Provider;
+
+// Static cache for breeds data to avoid repeated API calls
+static BREEDS_CACHE: OnceLock<BreedsApiResponse> = OnceLock::new();
 
 impl Provider {
   pub fn extract_breed_from_url(url: &str) -> Result<(String, Option<String>)> {
@@ -57,6 +61,12 @@ impl Provider {
     breeds_path: Option<P>,
     breeds_url: Option<&str>
   ) -> Result<BreedsApiResponse> {
+    // Check static cache first
+    if let Some(cached) = BREEDS_CACHE.get() {
+      debug!("Using cached breeds data");
+      return Ok((*cached).clone()); // Only clone when we actually need it
+    }
+
     let path = breeds_path.map_or_else(
       || PathBuf::from(DOG_CEO_BREEDS_JSON),
       |p| p.as_ref().to_path_buf()
@@ -65,23 +75,29 @@ impl Provider {
     let url = breeds_url.unwrap_or(DOG_CEO_BREEDS_URL);
     debug!("Fetching breeds from: {}", url);
 
-    // Check if we should use cached data
+    // Check if we should use cached data from file
     if fs::metadata(&path).is_ok() {
       debug!("Using cached breeds file");
       let content = fs::read_to_string(&path)?;
-      return serde_json::from_str(&content).map_err(Into::into);
+      let breeds_data: BreedsApiResponse = serde_json::from_str(&content)?;
+
+      // Cache in memory for next time
+      let _ = BREEDS_CACHE.set(breeds_data.clone());
+      return Ok(breeds_data);
     }
 
     debug!("Breeds file not found, downloading...");
     let response = reqwest::get(url).await?;
     let breeds_data: BreedsApiResponse = response.json().await?;
 
-    // Cache the response
+    // Cache the response both in memory and on disk
+    let _ = BREEDS_CACHE.set(breeds_data.clone());
+
+    // Save to file for persistence
     if let Some(parent) = path.parent() {
       fs::create_dir_all(parent)?;
     }
-    let content =
-      serde_json::to_string_pretty(&breeds_data).map_err(Error::Json)?;
+    let content = serde_json::to_string_pretty(&breeds_data)?;
     fs::write(&path, content)?;
 
     Ok(breeds_data)
