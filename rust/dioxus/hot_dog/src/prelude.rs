@@ -5,7 +5,10 @@ pub use tracing::{debug, error, info, trace, warn};
 //|-> Internal
 pub use crate::{
   error::{Error, Result},
-  utils::{format::capitalize_first_letter, *}
+  utils::{
+    format::{capitalize_first_letter as capitalize, *},
+    *
+  }
 };
 
 //|-> Constants

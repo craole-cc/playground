@@ -1,13 +1,17 @@
 //|-> Modules
+mod data;
 mod error;
 mod prelude;
 mod provider;
 mod utils;
-mod views;
+// mod views;
 
 use prelude::*;
 
-fn main() {
+#[tokio::main]
+async fn main() -> Result<()> {
   log::init();
   // views::launch();
+
+  Ok(())
 }

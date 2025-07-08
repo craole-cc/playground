@@ -46,7 +46,7 @@ impl Level {
 
 /// Builds and initializes the subscriber with a given filter.
 fn setup_subscriber(filter: EnvFilter) {
-  fmt().without_time().with_env_filter(filter).init();
+  fmt().without_time().pretty().with_env_filter(filter).init();
 }
 
 // -- Public API --

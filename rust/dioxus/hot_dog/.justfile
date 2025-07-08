@@ -7,3 +7,6 @@ serve:
 
 web:
   dx serve --platform web
+
+desktop:
+  dx serve --platform desktop

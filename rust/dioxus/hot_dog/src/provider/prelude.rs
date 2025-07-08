@@ -44,12 +44,8 @@ impl Breed {
 
   pub fn format_name(main: &str, sub: Option<&str>) -> String {
     match sub {
-      Some(s) => format!(
-        "{} {}",
-        capitalize_first_letter(s),
-        capitalize_first_letter(main)
-      ),
-      None => capitalize_first_letter(main)
+      Some(s) => format!("{} {}", capitalize(s), capitalize(main)),
+      None => capitalize(main)
     }
   }
 }

@@ -8,6 +8,7 @@ mod prelude;
 pub use prelude::*;
 
 //|-> External Exports
-// pub use default::Provider;
+pub use default::Provider;
+pub use prelude::DataSource;
 // pub use default::Config;
 // pub use provider::Provider;

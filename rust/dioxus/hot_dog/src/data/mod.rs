@@ -1,12 +1,13 @@
 //|-> Modules
-mod default;
-mod provider;
+mod dog;
 
 //|-> Internal Exports
 mod prelude {
-  pub use super::provider::Provider;
-  pub use crate::components::dog::prelude::*;
+  pub use crate::prelude::*;
+  pub use async_trait::async_trait;
+  pub use serde::{Deserialize, Serialize};
+  pub use std::collections::HashMap;
 }
 
 //|-> External Exports
-pub use default::Config;
+pub use dog::Dog;

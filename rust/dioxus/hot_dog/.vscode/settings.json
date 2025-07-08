@@ -1,0 +1,10 @@
+{
+  "fileinator.ignoredFolders": [
+    "src/data/dog copy 2.rs",
+    "target",
+    ".vscode",
+    "Cargo.lock",
+    "assets",
+    "src/data/dog copy.rs"
+  ]
+}
